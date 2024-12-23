@@ -10,7 +10,7 @@ func main() {
 	x = append(x, 1)
 	x = append(x, 2)
 	x = append(x, 3)
-	y := append(x, 1) /**/
+	y := append(x, 1)
 	z := append(x, 2)
 	fmt.Printf("x:%+v,%p cap:%d, len:%d \n", x, x, cap(x), len(x))
 	fmt.Printf("y:%+v,%p cap:%d, len:%d\n", y, y, cap(y), len(y))
