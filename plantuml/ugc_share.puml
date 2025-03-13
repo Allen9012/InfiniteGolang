@@ -1,0 +1,43 @@
+@startuml
+
+queue       Queue       as Consumer
+Consumer -> Redis: 稿件是否已转码
+activate Redis
+
+alt 缓存命中
+    Redis --> Consumer: 返回缓存数据
+    Consumer --> Consumer: 返回（已转码）
+else 缓存未命中
+database    Database    as DB
+    Redis --> Consumer: 返回空值
+      deactivate Redis
+
+    Consumer -> DB: 缓存穿透查询转码记录
+    activate DB
+
+    alt 存在转码记录
+        DB --> Consumer: 返回转码信息
+        Consumer -> Redis: 更新缓存\n（过期时间3天）
+        deactivate Redis
+    else 无转码记录
+        DB --> Consumer: 返回空值
+        Consumer -> VideoCloud: 发起异步转码请求
+        activate VideoCloud
+        VideoCloud --> Consumer: 确认请求已接收
+        VideoCloud -> VideoCloud: 转码处理
+        deactivate VideoCloud
+
+        Consumer -> DB: 写入转码记录\n（标记为已转码）
+        activate DB
+        DB --> Consumer: 写入成功
+        deactivate DB
+
+        Consumer -> Redis: 写入缓存\n（过期时间3天）
+        deactivate Redis
+    else DB异常
+        DB --> Consumer: 返回异常
+        deactivate DB
+    end
+end
+
+@enduml
