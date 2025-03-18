@@ -1,0 +1,29 @@
+@startuml
+start
+if (稿件状态检查) then (是)
+  #pink:仅处理开放稿件;
+  stop
+else (否)
+  fork
+    :获取稿件分发管控限制信息;
+  fork again
+    :动态视频部分
+  fork again
+    :获取POI位置数据;
+  fork again
+    :获取投票数据\n处理评论置顶;
+  fork again
+    :获取争议内容标签;
+  fork again
+    :获取简介和动态的@富文本;
+  end fork
+
+  :合并并行结果;
+  if (展示条件满足?) then (是)
+    :发送消息给动态;
+  else (否)
+    :记录关闭动态;
+  endif
+    :上报信息;
+stop
+@enduml

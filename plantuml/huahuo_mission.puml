@@ -1,0 +1,55 @@
+@startuml
+
+actor "UP主" as user
+participant "前端" as frontend
+participant "稿件服务pre" as pre
+participant "花火服务方" as spark
+participant "投稿网关interface" as gateway
+participant "稿件服务service" as service
+database "数据库archive_biz" as db
+
+user -> frontend: 打开投稿页面
+activate frontend
+
+frontend -> pre: 获取商单信息
+activate pre
+pre -> spark: HTTP GET /commercial-info
+activate spark
+spark --> pre: 返回商单数据
+deactivate spark
+pre --> frontend: 拼接商单信息
+deactivate pre
+
+frontend -> user: 展示商单界面
+
+user -> frontend: 点击投稿按钮
+frontend -> gateway: POST /submit
+activate gateway
+
+gateway -> spark: HTTP POST /validate
+activate spark
+spark --> gateway: 校验通过
+deactivate spark
+
+gateway -> service: 处理投稿请求
+activate service
+service -> db: INSERT稿件记录
+activate db
+db --> service: 写入成功
+deactivate db
+service --> gateway: 操作成功
+deactivate service
+
+gateway --> frontend: 投稿成功
+deactivate gateway
+frontend -> user: 显示成功提示
+
+activate db
+db --> spark: 消费binlog\n（通过消息/事件）
+deactivate db
+
+activate spark
+spark --> spark: 消费绑定消息
+deactivate spark
+
+@enduml

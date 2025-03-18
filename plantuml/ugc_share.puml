@@ -39,5 +39,10 @@ database    Database    as DB
         deactivate DB
     end
 end
-
+' ================ 用户下载流程 ================
+actor Actor as User
+User -> VideoCloud: [独立事件]点击下载按钮
+activate VideoCloud
+VideoCloud --> User: 返回转码后视频流
+deactivate VideoCloud
 @enduml
