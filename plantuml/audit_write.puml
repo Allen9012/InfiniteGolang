@@ -1,0 +1,62 @@
+@startuml
+title 写入流程
+
+box "HTTP接口层"
+participant Client as "HTTP客户端"
+end box
+
+box "业务逻辑层"
+participant Service as "vu-svc"
+database ApplyDAO as "archive_staff_apply"
+database LogDAO as "archive_staff_audit_log"
+end box
+
+box "异常处理"
+end box
+activate Client
+Client -> Service: POST /staff/audit/applys/state
+
+
+Service -> ApplyDAO: 根据id查询工单
+activate Service
+ApplyDAO --> Service: 工单数据
+deactivate Service
+
+alt 先审后发模式
+    Service -> ApplyDAO: 更新工单状态
+activate Service
+
+    Service -> LogDAO: 插入审核日志
+    alt 日志插入失败
+        LogDAO --> Service: 写入异常
+        Service -> Service: 记录错误,不报错
+    else 成功
+        LogDAO --> Service: 写入成功
+    end
+
+    Service -> Service: 执行addApply逻辑
+deactivate Service
+else 先发后审模式
+    alt state=驳回
+        Service -> ApplyDAO: 更新状态
+activate Service
+    else 其他状态
+        Service -> ApplyDAO: 仅修改属性位
+
+    Service -> LogDAO: 插入审核日志
+    alt 日志插入失败
+        LogDAO --> Service: 写入异常
+        Service -> Service: 记录错误,不报错
+    else 成功
+        LogDAO --> Service: 写入成功
+    end
+
+    Service -> Service: 执行通用addApply逻辑
+deactivate Service
+    end
+end
+deactivate Service
+
+Client <-- Service: 返回操作结果
+deactivate Client
+@enduml

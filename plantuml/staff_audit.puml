@@ -1,0 +1,20 @@
+@startuml
+title 旁路数据维护时序图
+
+participant Scheduler as "定时任务"
+database Database as "staff_apply 数据库"
+
+loop 每2秒触发一次
+    Scheduler -> Database: 查询待审核稿件
+    Database --> Scheduler: 返回aid列表
+
+    activate Scheduler
+    Scheduler->Scheduler
+    note right of Scheduler: 维护待审状态的联投稿件的map
+
+    deactivate Scheduler
+end
+
+
+@enduml
+

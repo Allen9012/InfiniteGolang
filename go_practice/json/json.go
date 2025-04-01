@@ -28,4 +28,10 @@ func main() {
 		fmt.Println(err)
 	}
 	fmt.Println(tmp)
+
+	tmp = &ADOrderV2{
+		ADOrderID: 1,
+	}
+	data, _ = json.Marshal(tmp)
+	fmt.Printf(string(data))
 }

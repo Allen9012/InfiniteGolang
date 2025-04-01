@@ -13,27 +13,29 @@ activate frontend
 
 frontend -> pre: 获取商单信息
 activate pre
-pre -> spark: HTTP GET /commercial-info
+pre -> spark: GET declare/setting
 activate spark
-spark --> pre: 返回商单数据
+spark --> pre: <color:red>返回商单数据(新增字段)</color>
 deactivate spark
 pre --> frontend: 拼接商单信息
 deactivate pre
 
 frontend -> user: 展示商单界面
 
-user -> frontend: 点击投稿按钮
-frontend -> gateway: POST /submit
+user -> frontend: 绑定花火任务+投稿
+frontend -> gateway: 投稿
 activate gateway
 
-gateway -> spark: HTTP POST /validate
+gateway -[#FF6B6B]> gateway: <color:red>校验是否属于花火任务</color>\n<color:red>子类型(3,4,5)</color>
+
+gateway -[#FF6B6B]> spark: <color:red>HTTP GET /validate</color>
 activate spark
-spark --> gateway: 校验通过
+spark --> gateway: 校验服务商合法通过
 deactivate spark
 
 gateway -> service: 处理投稿请求
 activate service
-service -> db: INSERT稿件记录
+service -> db: INSERT 花火任务信息\n<color:red>(新增服务商字段)</color>
 activate db
 db --> service: 写入成功
 deactivate db
@@ -45,7 +47,7 @@ deactivate gateway
 frontend -> user: 显示成功提示
 
 activate db
-db --> spark: 消费binlog\n（通过消息/事件）
+db --> spark: 消费binlog
 deactivate db
 
 activate spark

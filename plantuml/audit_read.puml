@@ -1,0 +1,62 @@
+@startuml
+title 联合投稿编辑后稿件消费流程
+
+box "处理核心"
+participant Processor as "Archive-v2\nBinlog消费者"
+database ApplyDAO as "archive_staff_apply"
+database LogDAO as "<color:red>archive_staff_audit_log"
+participant UserRPC as "Account"
+participant AegisMQ as "Aegis"
+end box
+
+box "维护内存map"
+participant Scheduler as "定时任务"
+database Database as "staff_apply 数据库"
+end box
+
+activate Processor
+Processor->Processor:过滤出update的msg
+'Processor: 解析稿件状态
+alt 稿件状态符合要求
+    loop 每2秒触发一次
+        Scheduler -> Database: 查询待审核状态的staff稿件
+        activate Database
+            Database --> Scheduler: 返回aid列表
+        deactivate Database
+        activate Scheduler
+            Scheduler->Scheduler
+            note right of Scheduler: 内存维护待审状态的联投稿件aid的map
+        deactivate Scheduler
+    end
+    Processor -> Scheduler: 过滤掉不存在于map中的aid
+    activate Scheduler
+        Scheduler --> Processor: return
+    deactivate
+    Processor -> ApplyDAO: 查询aid关联的联合投稿工单
+    activate ApplyDAO
+    ApplyDAO --> Processor: 返回staff_apply数据
+    deactivate
+    Processor -> UserRPC: 批量获取用户属性\n(粉丝数/蓝V标记)
+    activate UserRPC
+    UserRPC --> Processor: 返回数据
+    deactivate
+    Processor -> LogDAO: 查询驳回记录（TIDB）
+    activate LogDAO
+    LogDAO --> Processor: 返回是否有驳回记录(若失败返回默认)
+    deactivate
+    alt 触发条件判断
+        group 任一条件满足\n1. 主投人粉丝≥10w\n2. 粉丝≥5w\n3. 蓝V认证\n4. 联投人有驳回记录\n5. 黑名单(驳回≥3次)
+        end
+        Processor -> AegisMQ: 先审后发,送审核
+
+    else 未触发条件
+        Processor -> ApplyDAO: 先发后审\nUPDATE state+attr
+    end
+
+else 状态不符合
+    Processor --> Processor: 忽略事件
+end
+
+
+deactivate Processor
+@enduml
