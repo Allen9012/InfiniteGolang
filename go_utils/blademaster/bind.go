@@ -26,6 +26,7 @@ func Init() (engine *bm.Engine) {
 		data := &User{}
 		err := c.Bind(data)
 		if err != nil {
+			c.JSON(nil, err)
 			fmt.Println(err)
 		}
 		fmt.Println(data)
@@ -34,6 +35,7 @@ func Init() (engine *bm.Engine) {
 		data := &UserValidate{}
 		err := c.Bind(data)
 		if err != nil {
+			c.JSON(nil, err)
 			fmt.Println(err)
 		}
 		fmt.Println(data)
@@ -44,7 +46,7 @@ func Init() (engine *bm.Engine) {
 	select {}
 }
 
-//  curl http://0.0.0.0:8352/validate\?name\=testuser\&uid\=123456
+//  curl http://0.0.0.0:8990/validate\?name\=testuser\&uid\=123456
 
 func main() {
 	Init()
