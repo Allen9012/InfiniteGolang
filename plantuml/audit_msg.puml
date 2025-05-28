@@ -1,0 +1,14 @@
+@startuml
+participant "videoup-admin" as Admin
+queue "Videoup2Bvc" as MQ
+participant "videoup-job" as Job
+queue "私信databus" as mesMQ
+
+Admin -> MQ : second_round
+activate MQ
+MQ --> Job : 消费 second_round
+activate Job
+Job -> mesMQ : 发送编辑消息
+deactivate Job
+deactivate MQ
+@enduml

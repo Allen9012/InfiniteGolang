@@ -1,0 +1,25 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+title 大提交流程
+
+participant Aegis as "Aegis后台"
+participant VuSvc as "vu-svc"
+participant VuStationSvc as "vu-station-svc"
+database "bilibili_archive" as db
+
+activate Aegis
+Aegis -> VuSvc: 大提交 /aegis/archive/audit
+activate VuSvc
+
+VuSvc->VuSvc:拼接参数（删去）
+VuSvc -> VuStationSvc: /station/archive/aegisArchiveAudit
+
+activate VuStationSvc
+VuStationSvc->db:落表更新
+VuStationSvc-->VuStationSvc:通知C端
+VuStationSvc->VuSvc
+VuSvc->Aegis
+deactivate VuSvc
+deactivate
+@enduml

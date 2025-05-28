@@ -1,0 +1,27 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+title 新后台
+
+participant Aegis as "Aegis新后台"
+participant VuSvc as "vu-svc"
+participant VuStationSvc as "vu-station-svc"
+database "bilibili_archive" as db
+
+activate Aegis
+Aegis -> VuSvc:  <color:red>/videoup/aegis/archive/edit</color>
+activate VuSvc
+VuSvc->VuSvc: 校验参数
+VuSvc -> VuStationSvc: <color:red>/station/archive/aegisArchiveEdit</color>
+
+activate VuStationSvc
+VuStationSvc->db:查询稿件数据
+db->VuStationSvc:返回稿件数据
+VuStationSvc->VuStationSvc:计算attr(copyright引起的变化)
+VuStationSvc->db:落表更新
+VuStationSvc-->VuStationSvc:通知C端
+VuStationSvc->VuSvc:return
+VuSvc->Aegis:return
+deactivate VuSvc
+deactivate
+@enduml

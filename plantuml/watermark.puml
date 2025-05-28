@@ -1,0 +1,38 @@
+@startuml
+start
+:进入switchWatermark函数;
+
+if (版权是否为自制) then (no)
+  :标记 不处理水印;
+  stop
+else (yes)
+  :标记 处理水印;
+  :获取创作中心水印设置;
+  if (wm是否存在?) then (存在)
+    if (web&&app新版本) then (no)
+      :创作中心的水印设置，兼容其他投稿来源;
+    else (yes)
+      if (水印开关state是否合法) then (不合法)
+        :默认设置State=关闭状态;
+      else (合法)
+        :创作中心水印点位+用户选择的稿件水印的开关状态;
+      endif
+    endif
+  else (不存在)
+    if (非app) then (yes)
+      :app新人兜底，默认开;
+    else (no)
+      :web新人兜底，默认关;
+    endif
+    if (用户设置了稿件水印) then (yes)
+      if (水印开关state是否合法) then (不合法)
+        :默认设置State=关闭状态;
+      else (合法)
+        :创作中心水印点位+用户选择的稿件水印的开关状态;
+      endif
+    else (no)
+        :按照兜底逻辑设置;
+    endif
+  endif
+ stop
+@enduml
