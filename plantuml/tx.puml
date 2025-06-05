@@ -1,0 +1,34 @@
+@startuml
+actor Client as C
+participant "Application" as App
+participant "Database" as DB
+
+== Transaction Start ==
+C -> App: Request(transfer $100)
+activate App
+
+App -> DB: BEGIN TRANSACTION
+activate DB
+DB --> App: TX Started (ID:123)
+
+== Core Operations ==
+App -> DB: UPDATE AccA SET bal=bal-100
+DB --> App: Rows Updated
+
+App -> DB: UPDATE AccB SET bal=bal+100
+DB --> App: Rows Updated
+
+== Decision Point ==
+alt All operations succeed
+    App -> DB: COMMIT
+    DB --> App: Commit Confirmed
+    App --> C: Success\nTransaction Completed
+else Any operation fails
+    App -> DB: ROLLBACK
+    DB --> App: Rollback Complete
+    App --> C: Failure\nRollback Executed
+end
+
+deactivate DB
+deactivate App
+@enduml

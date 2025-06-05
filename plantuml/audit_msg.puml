@@ -8,7 +8,7 @@ Admin -> MQ : second_round
 activate MQ
 MQ --> Job : 消费 second_round
 activate Job
-Job -> mesMQ : 发送编辑消息
+Job -> mesMQ : 发送编辑私信
 deactivate Job
 deactivate MQ
 @enduml

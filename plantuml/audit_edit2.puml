@@ -3,23 +3,53 @@
 
 title 大提交流程
 
-participant Aegis as "Aegis后台"
+participant Aegis as "Aegis"
 participant VuSvc as "vu-svc"
 participant VuStationSvc as "vu-station-svc"
 database "bilibili_archive" as db
 
 activate Aegis
-Aegis -> VuSvc: 大提交 /aegis/archive/audit
+Aegis -> VuSvc:  ArcAuditAudit
 activate VuSvc
-
-VuSvc->VuSvc:拼接参数（删去）
-VuSvc -> VuStationSvc: /station/archive/aegisArchiveAudit
-
+VuSvc->VuSvc: 拼接参数
+alt 小提交
+    VuSvc -> VuStationSvc: ArcAuditAuditSimple
+else 大提交
+    VuSvc -> VuStationSvc: ArcAuditAudit
 activate VuStationSvc
-VuStationSvc->db:落表更新
-VuStationSvc-->VuStationSvc:通知C端
-VuStationSvc->VuSvc
-VuSvc->Aegis
+VuStationSvc->VuStationSvc: 状态机计算新状态
+VuStationSvc->db:查询稿件数据\n(archive&archive_addit&archive_delay)
+activate db
+db->VuStationSvc:return
+deactivate db
+VuStationSvc->VuStationSvc:check 校验参数
+VuStationSvc->VuStationSvc:<color:red>计算变更字段（不再支持如下）</color>
+note right of VuStationSvc:  title-cover-ptime-dtime-copyright-source-\ncontent-descv2-dynamic-dynamicv2
+== Transaction Start ==
+alt mtime乐观锁版本
+    VuStationSvc->db:对mtime字段或审核版本号有做CAS更新
+    else 普通版本
+    activate db
+    VuStationSvc->db:<color:red>处理archive表</color>
+    VuStationSvc->db:处理archive_addit表
+    VuStationSvc->db:<color:red>处理archive_delay表</color>
+    VuStationSvc->db:<color:red>处理archive_biz表</color>
+    note right of VuStationSvc:1. 动态富文本(不再支持)\n2. 取消活动\n3. 逃单研判
+    VuStationSvc->db:处理archive_porder
+    VuStationSvc->db:处理archive_first_pass表
+    deactivate db
+    end
+== Transaction End ==
+VuStationSvc-->VuStationSvc:取消活动通知
+VuStationSvc-->VuStationSvc:取消话题通知
+VuStationSvc-->VuStationSvc:后台解除锁定&&recover
+VuStationSvc-->VuStationSvc:<color:red>通知copyright_archive事件（不再支持</color>
+VuStationSvc-->VuStationSvc:<color:red>重新转码去水印事件（不再支持）</color>
+VuStationSvc->VuSvc:return
+VuSvc->Aegis:return
+VuStationSvc->VuStationSvc: 上报trace
+deactivate VuStationSvc
 deactivate VuSvc
-deactivate
+deactivate Aegis
+end
 @enduml

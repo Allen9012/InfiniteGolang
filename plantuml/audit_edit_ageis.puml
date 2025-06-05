@@ -3,25 +3,33 @@
 
 title 新后台
 
-participant Aegis as "Aegis新后台"
+participant Aegis as "高级设置页面"
 participant VuSvc as "vu-svc"
 participant VuStationSvc as "vu-station-svc"
+participant VuJob as "vu-job"
 database "bilibili_archive" as db
 
 activate Aegis
-Aegis -> VuSvc:  <color:red>/videoup/aegis/archive/edit</color>
+Aegis -> VuSvc:  <color:red>/VideoupService/ArcAuditEdit</color>
 activate VuSvc
 VuSvc->VuSvc: 校验参数
-VuSvc -> VuStationSvc: <color:red>/station/archive/aegisArchiveEdit</color>
+VuSvc -> VuStationSvc: <color:red>VideoupStationService/ArcAuditEdit</color>
 
 activate VuStationSvc
-VuStationSvc->db:查询稿件数据
-db->VuStationSvc:返回稿件数据
-VuStationSvc->VuStationSvc:计算attr(copyright引起的变化)
-VuStationSvc->db:落表更新
-VuStationSvc-->VuStationSvc:通知C端
+VuStationSvc->db:查询稿件数据\n(archive&archive_addit&archive_delay)
+db->VuStationSvc:return
+VuStationSvc->VuStationSvc:计算变更字段
+VuStationSvc->db:事务archive&archive_addit&\narchive_delay&archive_biz
+VuStationSvc-->VuStationSvc:通知copyright_archive事件
+VuStationSvc-->VuStationSvc:重新转码去水印事件
 VuStationSvc->VuSvc:return
 VuSvc->Aegis:return
 deactivate VuSvc
-deactivate
+
+Aegis-->VuJob:发送second round消息
+activate VuJob
+VuJob-->VuJob:消费second round消息
+VuJob->VuJob:发送后台编辑私信
+deactivate VuJob
+deactivate Aegis
 @enduml
